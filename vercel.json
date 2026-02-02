@@ -1,3 +1,5 @@
+/api/weather.js
+
 {
   "version": 2,
   "builds": [
