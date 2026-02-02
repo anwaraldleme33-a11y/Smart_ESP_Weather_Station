@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
     const rows = await sql.unsafe(`
       SELECT id, device_id, temperture, humidity, pressure, windS, windD
-      FROM sensor_data
+      FROM weather_data
       ORDER BY time ASC
       LIMIT 100
     `);
