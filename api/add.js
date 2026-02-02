@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   const { device_id,temperture,humidity,pressure,windS,windD} = req.body;
 
   await sql`
-    INSERT INTO informations(device_id,temperture,humidity,pressure,windS,windD)
+    INSERT INTO weather_data (device_id,temperture,humidity,pressure,windS,windD)
     VALUES(${device_id},${temperture},${humidity},${pressure},${windS},${windD})
   `;
 
