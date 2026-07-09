@@ -803,7 +803,7 @@
             
             <div class="footer-info">
                 <span><i class="fas fa-map-marker-alt"></i> بغداد، العراق</span>
-               <span><i class="fas fa-envelope"></i> secres@rdd.edu.iq</span>
+                <span><i class="fas fa-envelope"></i> secres@rdd.edu.iq</span>
                 <span><i class="fas fa-phone"></i> +964 7731149340</span>
                 <span><i class="fas fa-globe"></i> www.src.edu.iq</span>
             </div>
@@ -919,19 +919,19 @@
         }
 
         // كود الطقس
-        let currentDevice = 'max1';
-        let autoRefreshEnabled = true;
-        let refreshInterval = null;
-        let charts = {};
-        let recentData = {
+        var currentDevice = 'max1';
+        var autoRefreshEnabled = true;
+        var refreshInterval = null;
+        var charts = {};
+        var recentData = {
             temperature: [],
             humidity: [],
             pressure: [],
             windSpeed: [],
             timestamps: []
         };
-        let currentCompassRotation = 0;
-        let flatpickrInstance = null;
+        var currentCompassRotation = 0;
+        var flatpickrInstance = null;
 
         function initWeather() {
             initializeCalendar();
@@ -945,12 +945,7 @@
                 locale: "ar",
                 dateFormat: "Y-m-d",
                 maxDate: "today",
-                defaultDate: new Date(),
-                onChange: function(selectedDates, dateStr) {
-                    if (dateStr) {
-                        console.log("التاريخ المحدد:", dateStr);
-                    }
-                }
+                defaultDate: new Date()
             });
         }
 
@@ -965,15 +960,15 @@
             try {
                 showLoadingEffect();
                 
-                const response = await fetch(`/api/sensor?device=${currentDevice}`);
+                var response = await fetch('/api/sensor?device=' + currentDevice);
                 
                 if (!response.ok) {
-                    throw new Error("خطأ في الخادم: " + response.status);
+                    throw new Error('خطأ في الخادم: ' + response.status);
                 }
                 
-                const data = await response.json();
+                var data = await response.json();
                 
-                let todayData = [];
+                var todayData = [];
                 if (data.today && Array.isArray(data.today)) {
                     todayData = data.today;
                 } else if (Array.isArray(data)) {
@@ -985,7 +980,7 @@
                     return;
                 }
                 
-                const latestReading = todayData[todayData.length - 1];
+                var latestReading = todayData[todayData.length - 1];
                 
                 updateStatus('متصل', true);
                 updateChartData(latestReading);
@@ -1412,7 +1407,7 @@
 
         function showLoadingEffect() {
             var refreshBtn = document.querySelector('.control-btn');
-            if (refreshBtn && refreshBtn.textContent.includes('تحديث البيانات')) {
+            if (refreshBtn && refreshBtn.textContent.indexOf('تحديث البيانات') !== -1) {
                 refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحديث...';
                 refreshBtn.disabled = true;
             }
@@ -1420,7 +1415,7 @@
 
         function hideLoadingEffect() {
             var refreshBtn = document.querySelector('.control-btn');
-            if (refreshBtn && refreshBtn.textContent.includes('جاري التحديث')) {
+            if (refreshBtn && refreshBtn.textContent.indexOf('جاري التحديث') !== -1) {
                 refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> تحديث البيانات';
                 refreshBtn.disabled = false;
             }
@@ -1442,7 +1437,7 @@
 
         window.weatherInitialized = false;
 
-        document.getElementById('archiveModal')?.addEventListener('click', function(e) {
+        document.getElementById('archiveModal').addEventListener('click', function(e) {
             if (e.target === this) closeArchive();
         });
 
