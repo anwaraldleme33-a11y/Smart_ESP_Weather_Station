@@ -5,9 +5,6 @@
   <title>Weather Monitoring Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
     :root {
       --bg: #0f172a;
@@ -66,14 +63,6 @@
       color: var(--muted);
     }
 
-    .charts {
-      max-width: 1200px;
-      margin: 30px auto;
-      padding: 20px;
-      background: var(--card);
-      border-radius: 16px;
-    }
-
     footer {
       text-align: center;
       color: var(--muted);
@@ -87,6 +76,94 @@
       border: none;
       padding: 8px;
       border-radius: 6px;
+      margin-top: 10px;
+    }
+
+    /* بوصلة حقيقية */
+    .compass-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px auto;
+      max-width: 1200px;
+      padding: 20px;
+    }
+
+    .compass {
+      width: 200px;
+      height: 200px;
+      background: var(--card);
+      border-radius: 50%;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0,0,0,.3);
+      border: 4px solid var(--muted);
+    }
+
+    .compass-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .compass-point {
+      position: absolute;
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--muted);
+    }
+
+    .compass-point.n { top: 5px; left: 50%; transform: translateX(-50%); color: #ff4444; }
+    .compass-point.s { bottom: 5px; left: 50%; transform: translateX(-50%); }
+    .compass-point.e { right: 5px; top: 50%; transform: translateY(-50%); }
+    .compass-point.w { left: 5px; top: 50%; transform: translateY(-50%); }
+
+    .needle {
+      position: absolute;
+      width: 4px;
+      height: 70px;
+      background: #ff4444;
+      top: 50%;
+      left: 50%;
+      transform-origin: bottom center;
+      transform: translate(-50%, -100%) rotate(0deg);
+      transition: transform 0.5s ease;
+      border-radius: 2px;
+      z-index: 2;
+    }
+
+    .needle::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 15px solid #ff4444;
+    }
+
+    .needle-center {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: #ff4444;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      border: 2px solid var(--bg);
+    }
+
+    .wind-direction-text {
+      text-align: center;
+      font-size: 18px;
+      color: var(--accent);
       margin-top: 10px;
     }
   </style>
@@ -135,11 +212,29 @@
     <div class="value" id="windD">--</div>
     <div class="unit">Direction</div>
   </div>
+
+  <div class="card">
+    <h3>Rain</h3>
+    <div class="value" id="rain">--</div>
+    <div class="unit">Status</div>
+  </div>
 </div>
 
-<div class="charts">
-  <canvas id="tempChart"></canvas>
+<!-- بوصلة حقيقية -->
+<div class="compass-container">
+  <div class="compass">
+    <div class="compass-inner">
+      <div class="compass-point n">N</div>
+      <div class="compass-point s">S</div>
+      <div class="compass-point e">E</div>
+      <div class="compass-point w">W</div>
+      <div class="needle" id="needle"></div>
+      <div class="needle-center"></div>
+    </div>
+  </div>
 </div>
+
+<div class="wind-direction-text" id="windDirectionText">Direction: --</div>
 
 <footer>
   ESP32 + BME280 + Neon + Vercel
@@ -152,9 +247,10 @@
   const presEl = document.getElementById("pres");
   const windSEl = document.getElementById("windS");
   const windDEl = document.getElementById("windD");
+  const rainEl = document.getElementById("rain");
   const deviceSelect = document.getElementById("deviceSelect");
-
-  let chart;
+  const needle = document.getElementById("needle");
+  const windDirectionText = document.getElementById("windDirectionText");
 
   async function fetchData() {
     const device = deviceSelect.value;
@@ -171,31 +267,30 @@
     windSEl.textContent = last.windS.toFixed(1);
     windDEl.textContent = last.windD;
 
-    updateChart(data);
+    // عرض حالة المطر
+    if (last.rainy === true || last.rainy === 1) {
+      rainEl.textContent = "🌧️ Rainy";
+    } else if (last.rainy === false || last.rainy === 0) {
+      rainEl.textContent = "☀️ Not Rainy";
+    } else {
+      rainEl.textContent = "--";
+    }
+
+    // تحديث البوصلة
+    const windDirection = last.windD || "N";
+    const angle = getWindAngle(windDirection);
+    needle.style.transform = `translate(-50%, -100%) rotate(${angle}deg)`;
+    windDirectionText.textContent = `Direction: ${windDirection}`;
   }
 
-  function updateChart(data) {
-    const labels = data.map(d => new Date(d.created_at).toLocaleTimeString());
-    const temps  = data.map(d => d.temperature);
-
-    if (!chart) {
-      chart = new Chart(document.getElementById("tempChart"), {
-        type: "line",
-        data: {
-          labels,
-          datasets: [{
-            label: "Temperature °C",
-            data: temps,
-            borderWidth: 2,
-            tension: 0.4
-          }]
-        }
-      });
-    } else {
-      chart.data.labels = labels;
-      chart.data.datasets[0].data = temps;
-      chart.update();
-    }
+  function getWindAngle(direction) {
+    const directions = {
+      'N': 0, 'NNE': 22.5, 'NE': 45, 'ENE': 67.5,
+      'E': 90, 'ESE': 112.5, 'SE': 135, 'SSE': 157.5,
+      'S': 180, 'SSW': 202.5, 'SW': 225, 'WSW': 247.5,
+      'W': 270, 'WNW': 292.5, 'NW': 315, 'NNW': 337.5
+    };
+    return directions[direction] || 0;
   }
 
   deviceSelect.addEventListener("change", fetchData);
